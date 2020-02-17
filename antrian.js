@@ -1,4 +1,4 @@
-let poolLength = 100
+let poolLength = 10
 let pool = []
 let q = []
 let waitingSum = 0
@@ -15,7 +15,7 @@ for (var i = 0; i < poolLength; i++) {
     arriveTime: randArrive,
     waitingTime: 0,
     serviceTime: randService,
-    respondTime: 0
+    respondTime: randService
   };
   pool.push(temp)
 }
@@ -32,10 +32,6 @@ while (q.length > 0 && q.length <= 8 && pool.length >= 0) {
       dropOut.push(pool[0])
       pool.shift()
 
-      for (let i = 1; i < q.length; i++) {
-        q[i].waitingTime += q[0].serviceTime
-      }
-
       waitingSum += q[0].waitingTime
       respondSum += q[0].waitingTime + q[0].serviceTime
       q.shift()
@@ -44,45 +40,43 @@ while (q.length > 0 && q.length <= 8 && pool.length >= 0) {
       console.log('Difference : ' + (q[0].serviceTime - pool[0].arriveTime));
       if (q[0].serviceTime > pool[0].arriveTime) {
         q[0].serviceTime -= pool[0].arriveTime
-        pool[0].arriveTime--
+        pool[0].arriveTime -= pool[0].arriveTime
+
+        for (let i = 0; i < q.length; i++) {
+          pool[0].waitingTime += q[i].serviceTime //every move, we will add up the waiting time in the queue
+        }
+
+        // pool[0].waitingTime = q[q.length - 1].waitingTime + q[q.length -1].serviceTime - pool[0].ar
 
         serviceSum += pool[0].serviceTime //serviceSum will be add up when pool[0] will come in so it can hold the service time
         q.push(pool[0])
         pool.shift()
 
-        for (let i = 1; i < q.length; i++) {
-          q[i].waitingTime += q[0].serviceTime //every move, we will add up the waiting time in the queue
-        }
-
       } else if (q[0].serviceTime < pool[0].arriveTime) {
         pool[0].arriveTime -= q[0].serviceTime
-        q[0].serviceTime--
+        q[0].serviceTime -= q[0].serviceTime
 
-        for (let i = 1; i < q.length; i++) {
-          q[i].waitingTime += q[0].serviceTime
+        if (q.length == 1) {
+          serviceSum += pool[0].serviceTime
+          q.push(pool[0])  //masuk server
+          pool.shift()  
         }
 
         waitingSum += q[0].waitingTime                      // before q[0] comes out, we will record the waiting time
-        respondSum += q[0].waitingTime + q[0].serviceTime   // and respond time
+        respondSum += (q[0].waitingTime + q[0].respondTime)   // and respond time
         q.shift()
-
-        if (q.length == 0) {
-          serviceSum += pool[0].serviceTime
-          q.push(pool[0])
-          pool.shift()
-        }
-      } else if (q[0].serviceTime = pool[0].arriveTime) {
+        
+      } else if (q[0].serviceTime == pool[0].arriveTime) {
         pool[0].arriveTime -= q[0].serviceTime
-        q[0].serviceTime--
-
-        for (let i = 1; i < q.length; i++) {
-          q[i].waitingTime += q[0].serviceTime
-        }
+        q[0].serviceTime -= q[0].serviceTime
 
         waitingSum += q[0].waitingTime
-        respondSum += q[0].waitingTime + q[0].serviceTime
-        
+        respondSum += (q[0].waitingTime + q[0].respondTime)
         q.shift()
+
+        for (let i = 0; i < q.length; i++) {
+          pool[0].waitingTime += q[i].serviceTime //every move, we will add up the waiting time in the queue
+        }
 
         serviceSum += pool[0].serviceTime
         q.push(pool[0])
@@ -90,9 +84,9 @@ while (q.length > 0 && q.length <= 8 && pool.length >= 0) {
       }
     }
   } else {
-    for (let i = 1; i < q.length; i++) {
-      q[i].waitingTime += q[0].serviceTime
-    }
+    waitingSum += q[0].waitingTime
+    respondSum += (q[0].waitingTime + q[0].respondTime)
+
     q.shift()
   }
 }
